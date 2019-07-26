@@ -1,0 +1,41 @@
+/*<BASDKey>
+*******************************************************************************
+*
+* COPYRIGHT RESERVED, 2011 Robert Bosch GmbH. All rights reserved.
+* The reproduction, distribution and utilization of this document
+* as well as the communication of its contents to others without
+* explicit authorization is prohibited. Offenders will be held
+* liable for the payment of damages. All rights reserved in the
+* event of the grant of a patent, utility model or design.
+*
+*******************************************************************************
+* Administrative Information (automatically filled in)
+* $Domain____:BASD$
+* $Namespace_:\Deliveries\IVS_MPC2_PF$
+* $Class_____:H$
+* $Name______:gpio_IO$
+* $Variant___:AR31.3.0.0$
+* $Revision__:0$
+*******************************************************************************
+</BASDKey>*/
+
+#define XZ_GPIO               0xE000A000 /*!< General Purpose Input / Output */
+#define MASK_X_SFT      16
+#define MASK_X_MSK  0xFFFF0000      /*!<31:16 wo 0x0 Mask values to be applied on writes to the corresponding GPIO pins
+                                        0 = pin value is updated
+                                        1 = pin is masked
+                                        Each bit controls the corresponding pin within the 16-bit half-bank Write Only, Read back as zero*/
+                                        
+#define GPIO_MIO_PIN_MSK(mio)     (1UL << (mio)%32)
+#define GPIO_DIRM(x) (XZ_GPIO + 0x00000204 + (x * 0x40)) /*!<32 rw 0x00000000 Direction mode configuration register: Configures bank 0 for direction mode, either input or output*/
+        
+#define GPIO_DIRM_MIO(mio) (GPIO_DIRM((mio)/32))    
+#define GPIO_MASK_DATA_MIO(mio) (XZ_GPIO + (mio / 16) * 0x4)    /*!< Acess to maskable regs based on mio nr*/
+#define GPIO_OEN_MIO(mio) (GPIO_OEN((mio)/32))
+#define GPIO_OEN(x) (XZ_GPIO + 0x00000208 + (x * 0x40)) /*!<32 rw 0x00000000 Output enable register: Configures the output enables of bank 0 */
+    
+#define SET_BIT_MASK(bit,val)       (((~(1UL << ((bit) + MASK_X_SFT))) & MASK_X_MSK) | (((val) & 0x1) << (bit)))
+#define R32(reg) (*(volatile uint32 *)(void*)(reg))
+
+void g_GPIO_InitOutput_vd(sint32 f_Pin_si32,sint32 f_Data_si32);
+
