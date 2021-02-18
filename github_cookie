@@ -1,0 +1,8 @@
+#LWP-Cookies-2.0
+Set-Cookie3: _octo="GH1.1.725324373.1604458675"; path="/"; domain=".github.com"; path_spec; secure; expires="2021-11-04 01:57:55Z"; SameSite=Lax; version=0
+Set-Cookie3: dotcom_user=sainttelant; path="/"; domain=".github.com"; path_spec; domain_dot; secure; expires="2021-11-04 02:57:56Z"; HttpOnly=None; SameSite=Lax; version=0
+Set-Cookie3: logged_in=yes; path="/"; domain=".github.com"; path_spec; domain_dot; secure; expires="2021-11-04 02:57:56Z"; HttpOnly=None; SameSite=Lax; version=0
+Set-Cookie3: __Host-user_session_same_site=DeS8ers433raDSyR2tMuMknbH1fNQ3iEIiFilYoI5NBfp4Fx; path="/"; domain="github.com"; path_spec; secure; expires="2020-11-18 02:57:57Z"; HttpOnly=None; SameSite=Strict; version=0
+Set-Cookie3: _device_id=3f3dab4985a74239878407352203f845; path="/"; domain="github.com"; path_spec; secure; expires="2021-11-04 02:57:56Z"; HttpOnly=None; SameSite=Lax; version=0
+Set-Cookie3: has_recent_activity=1; path="/"; domain="github.com"; path_spec; secure; expires="2020-11-04 03:57:57Z"; HttpOnly=None; SameSite=Lax; version=0
+Set-Cookie3: user_session=DeS8ers433raDSyR2tMuMknbH1fNQ3iEIiFilYoI5NBfp4Fx; path="/"; domain="github.com"; path_spec; secure; expires="2020-11-18 02:57:57Z"; HttpOnly=None; SameSite=Lax; version=0

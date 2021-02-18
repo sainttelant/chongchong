@@ -1,0 +1,5 @@
+国家,地址,端口,密码,加密,协议,混合
+德国,89.163.224.142,666,dongtaiwang.com 123abc,rc4,origin,plian
+洛杉矶,88.218.92.163,22222,dongtaiwang.com 123abc,rc4,origin,plian
+瑞士,45.90.57.171,12345,dongtaiwang.com 123abc,aes-256-cfb,origin,plain
+日本,45.88.43.35,34567,dongtaiwang.com 123abc,aes-256-gcm,,
