@@ -44,7 +44,7 @@ def copyandJiami(src_path, target_path,key_file):
             else:
                 path2 = os.path.join(os.path.abspath(target_path), file)
                 neof = path2 + '.jm'
-                crypt_file(path, neof, key_file)
+                crypt_files(path, neof, key_file,file)
         return True
     else:
         return False
@@ -111,11 +111,56 @@ def crypt_file(fi,fo,key_file):
     f.close()
     fe.close()
 
+def crypt_filename(name,key_file):
+    print("filename:",name)
+    # 将字符串转成bytes
+    name = name.encode('utf-8')
+    print(name, type(name))
+
+    #length of namebytes
+    k = get_key(key_file)
+    namelength= len(name)
+    buff =[]
+    tmp = ""
+    for i in range(namelength):
+        c=i%len(k)
+        tmp=name[i]^k[c]
+        buff.append(tmp)
+    #转成bytes
+    cryptname = bytes(buff)
+    #转成str类型返回
+    cryptname=cryptname.decode()
+    return cryptname
+
+def crypt_files(fi,fo,key_file,name):
+    print("fi",fi)
+    print("f0",fo)
+    print("key_file",key_file)
+    if fi == " " or fo == " " or key_file == " ":
+        return
+    k=get_key(key_file)
+    f=open(fi,'rb')
+    fc=f.read()
+    fe=open(fo,'wb')
+    flen=len(fc)
+    buff=[]
+    for i in range(flen):
+        c=i%len(k)
+        fo=fc[i]^k[c]
+        buff.append(fo)
+    fe.write(bytes(buff))
+    f.close()
+    fe.close()
+
 
 if __name__=='__main__':
+    print(">>>>>>>>>>USE instruction<<<<<<<<<<")
     print("first to generate a Key file------")
-    print("plz run : python3 jiamijiemi yaoshi.txt---first ")
-    print("plz run : python3 jiamijiemi <dai jia mi folder><output folders><miyao.txt>")
+    print("plz run : python3 jiamijiemi yaoshi.txt")
+    print(" generate keyfile!!!!!! at first")
+    print("plz run : python3 jiamijiemi <Input folder><output folders> <Keyfile> <1:jiami>")
+    print("plz run : python3 jiamijiemi <Input folder><output folders> <Keyfile> <0:jiemi>")
+    print("plz run Name JiaMI test : python3 jiamijiemi <FilesName> <Keyfile>")
     args=sys.argv
     arg_num=len(args)
     if arg_num==2:
@@ -124,31 +169,29 @@ if __name__=='__main__':
         print('Key file has been generated:%s' % (args[1]))
         exit(0)
 
-    if arg_num==3:
-        newfolder = os.getcwd()
-        newfolder = newfolder+"/Jiami"
-        if os.path.exists(newfolder) == False:
-            os.makedirs(newfolder)
-            copyandJiami(args[1], newfolder,args[2])
+    if arg_num == 3:
+        nameJiami = crypt_filename(args[1],args[2])
+        print ("nameJiami:",nameJiami)
+        print(type(nameJiami))
 
-        exit(0)
+        nameJiemi = crypt_filename(nameJiami,args[2])
+        print ("nameJiemi:",nameJiemi)
 
-    if arg_num ==4:
-        #print('Usage:crypt.py Jiemi a!<input file> <output file> <key file>')
-        copyandJiemi(args[1],args[2],args[3])
 
-    if arg_num >4:
-        crypt_file(args[1],args[2],args[3])
-    """
-    if len(args)!=4:
-        print('Usage:crypt.py <input file> <output file> <key file>')
-        exit(-1)
-    try:
-        crypt_file(args[1],args[2],args[3])
 
-    except:
-        print("plz input the correct jiemi three files")
-    """
+    if arg_num ==5:
+        if args[4]=="1":
+            newfolder = os.getcwd()
+            newfolder = newfolder + "/" + args[2]
+            print("outputfiles:",args[2])
+            if os.path.exists(newfolder) == False:
+                os.makedirs(newfolder)
+                copyandJiami(args[1], newfolder, args[3])
+            exit(0)
+        if args[4]=="0":
+            copyandJiemi(args[1],args[2],args[3])
+            exit(0)
+
     print('Done!')
 
 
