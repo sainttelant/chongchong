@@ -45,6 +45,7 @@ def copyandJiami(src_path, target_path,key_file):
                 path2 = os.path.join(os.path.abspath(target_path), file)
                 neof = path2 + '.jm'
                 crypt_files(path, neof, key_file,file)
+                #supercrypt_files(path,neof,key_file,file)
         return True
     else:
         return False
@@ -142,6 +143,41 @@ def crypt_files(fi,fo,key_file,name):
     f=open(fi,'rb')
     fc=f.read()
     fe=open(fo,'wb')
+    flen=len(fc)
+    buff=[]
+    for i in range(flen):
+        c=i%len(k)
+        fo=fc[i]^k[c]
+        buff.append(fo)
+    fe.write(bytes(buff))
+    f.close()
+    fe.close()
+
+
+def supercrypt_files(fi,absfo,key_file,name):
+    """
+    这种方法无能为力了，因为windows含有八种字符不能作为名字使用
+    共有九个敏感字符，分别是 ? * : " < > \ / |
+
+    """
+    print("fi",fi)
+    print("absfo:",absfo)
+    print("key_file",key_file)
+    if fi == " " or key_file == " ":
+        return
+    k=get_key(key_file)
+    f=open(fi,'rb')
+    fc=f.read()
+
+    #生成新的name
+    absfo = absfo.split(name)[0]
+    print("absfo:", absfo)
+    newname = crypt_filename(name, key_file)
+    newname = absfo+newname+".jm"
+    print("filenewname:",newname)
+
+
+    fe = open(newname,"wb")
     flen=len(fc)
     buff=[]
     for i in range(flen):
