@@ -7,7 +7,7 @@
 import sys
 import random
 import os
-
+import zipfile
 
 def copy_dir(src_path, target_path):
     if os.path.isdir(src_path) and os.path.isdir(target_path):
@@ -44,8 +44,8 @@ def copyandJiami(src_path, target_path,key_file):
             else:
                 path2 = os.path.join(os.path.abspath(target_path), file)
                 neof = path2 + '.jm'
-                crypt_files(path, neof, key_file,file)
-                #supercrypt_files(path,neof,key_file,file)
+                #crypt_files(path, neof, key_file,file)
+                supercrypt_files(path,neof,key_file,file)
         return True
     else:
         return False
@@ -67,10 +67,12 @@ def copyandJiemi(src_path, target_path,key_file):
                 path2 = os.path.join(os.path.abspath(target_path), file)
                 print("path2:",path2)
                 path2_suffix = path2.split(".")[-1]
-                print(path2_suffix)
+                #print(path2_suffix)
                 neof = path2.split("."+path2_suffix)[0]
                 print("neof:",neof)
-                crypt_file(path, neof, key_file)
+                newpath = Super_jiemifiles(path, neof,key_file)
+                print("newpath:",newpath)
+                crypt_file(path, newpath, key_file)
         return True
     else:
         return False
@@ -93,8 +95,8 @@ def get_key(f):
     return k
 
 def crypt_file(fi,fo,key_file):
-    print("fi",fi)
-    print("f0",fo)
+    print("Jiemi inputfile:",fi)
+    print("Jiemi outputfile:",fo)
     print("key_file",key_file)
     if fi == " " or fo == " " or key_file == " ":
         return
@@ -111,6 +113,45 @@ def crypt_file(fi,fo,key_file):
     fe.write(bytes(buff))
     f.close()
     fe.close()
+
+def Super_jiemifiles(fi,fo, key_file):
+    print("Input Jiemifiles:",fi)
+    print("Output Jiemifiles:",fo)
+    #取到加密的文件name
+    filename = fo.split("\\")[-1]
+    prefix_name = fo.split(filename)[0]
+    print('prefix_name：',prefix_name)
+    print("filename:",filename)
+    if "nimabi" in filename and filename[0] == "n" and filename[2]=="m":
+        filename=filename.split("nimabi")[1]
+        filename = prefix_name + filename
+        return filename
+    else:
+        jiemifilename = Jiemi_filename(filename, key_file)
+        print("huanyuan name:", jiemifilename)
+        # 构造真实的绝对路径
+        absolutepath = fo.split(filename)[0]  + jiemifilename
+        print("absolutepath:", absolutepath)
+        return absolutepath
+
+def Jiemi_filename(name,key_file):
+    print("jiemi's filename:",name)
+    name = name.encode('utf-8')
+    print(name, type(name))
+    # length of namebytes
+    k = get_key(key_file)
+    namelength = len(name)
+    buff = []
+    tmp = ""
+    for i in range(namelength):
+        c = i % len(k)
+        tmp = name[i] ^ k[c]
+        buff.append(tmp)
+        # 转成bytes
+    cryptname = bytes(buff)
+    # 转成str类型返回
+    cryptname = cryptname.decode()
+    return  cryptname
 
 def crypt_filename(name,key_file):
     print("filename:",name)
@@ -131,6 +172,14 @@ def crypt_filename(name,key_file):
     cryptname = bytes(buff)
     #转成str类型返回
     cryptname=cryptname.decode()
+    notallowed =["?","*",":","<",">","/","\\",'|',"\""]
+    for elments in notallowed:
+        if elments in cryptname:
+            print("newname contains illegal character, use original name")
+            # 加上一个标志字符前缀
+            return "nimabi"+bytes.decode(name)
+
+    print("use crypt name to process")
     return cryptname
 
 def crypt_files(fi,fo,key_file,name):
@@ -153,11 +202,11 @@ def crypt_files(fi,fo,key_file,name):
     f.close()
     fe.close()
 
-
 def supercrypt_files(fi,absfo,key_file,name):
     """
     这种方法无能为力了，因为windows含有八种字符不能作为名字使用
     共有九个敏感字符，分别是 ? * : " < > \ / |
+    改进一下，出现以上字符用原来的名称
 
     """
     print("fi",fi)
@@ -222,7 +271,12 @@ if __name__=='__main__':
             print("outputfiles:",args[2])
             if os.path.exists(newfolder) == False:
                 os.makedirs(newfolder)
-                copyandJiami(args[1], newfolder, args[3])
+                if args[1].split(".")[-1] == "zip":
+                    print("input folder is zip file!!!")
+                    crypt_bz2file(args[1],newfolder,args[3])
+                else:
+                    print("inputfiles'suffix:",args[1].split(".")[-1])
+                    copyandJiami(args[1], newfolder, args[3])
             exit(0)
         if args[4]=="0":
             copyandJiemi(args[1],args[2],args[3])
