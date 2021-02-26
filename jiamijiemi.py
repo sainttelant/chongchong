@@ -8,6 +8,7 @@ import sys
 import random
 import os
 import zipfile
+import shutil
 
 def copy_dir(src_path, target_path):
     if os.path.isdir(src_path) and os.path.isdir(target_path):
@@ -34,18 +35,59 @@ def copyandJiami(src_path, target_path,key_file):
 
     if os.path.isdir(src_path) and os.path.isdir(target_path):
         filelist_src = os.listdir(src_path)
+        logfile ="cryptlog.txt"
+        logfile_path = os.path.join(os.getcwd(), logfile)
         for file in filelist_src:
+            if file[0]==".":
+                continue
             path = os.path.join(os.path.abspath(src_path), file)
             if os.path.isdir(path):
+                if file =="navi":
+                    print("this is navi link folder!!--continue!!")
+                    continue
                 path1 = os.path.join(os.path.abspath(target_path), file)
                 if not os.path.exists(path1):
                     os.mkdir(path1)
                 copyandJiami(path, path1, key_file)
             else:
-                path2 = os.path.join(os.path.abspath(target_path), file)
-                neof = path2 + '.jm'
-                #crypt_files(path, neof, key_file,file)
-                supercrypt_files(path,neof,key_file,file)
+
+                # 直接copy .patch结尾的文件
+                if ".patch" in file:
+                    #使用shutil 进行拷贝文件
+                    """
+                    path1 = os.path.join(os.path.abspath(target_path), file)
+                    shutil.copy(path, path1)
+                    """
+                    print("this file %s ends with .patch, continue!!!"%(file))
+                    path1 = os.path.join(os.path.abspath(target_path), file)
+                    print("its absolute path is:",path1)
+                    # 输出文件log 
+                    
+                    with open(logfile_path, "a") as log:
+                        log.write("its absolute path is:%s"%path1+"\n\n")
+                elif ".so" in file and file.split(".")[-1]=="so":
+                    print("this file is so,just copy it")
+                    path1 = os.path.join(os.path.abspath(target_path), file)
+                    shutil.copy(path, path1)
+                    with open(logfile_path, "a") as log:
+                        log.write("Copy %s to the destination:%s"%(file,os.path.abspath(target_path))+"\n\n")
+                elif ".a" in file and file.split(".")[-1] == "a":
+                    print("this file is .a file, just copy it")
+                    path1 = os.path.join(os.path.abspath(target_path), file)
+                    shutil.copy(path, path1)
+                    with open(logfile_path, "a") as log:
+                        log.write("Copy %s to the destination:%s"%(file,os.path.abspath(target_path))+"\n\n")
+                elif file.split(".")[-1]=="zip" and ".zip" in file:
+                    print("this file is .zip file, just copy it")
+                    path1 = os.path.join(os.path.abspath(target_path), file)
+                    shutil.copy(path, path1)
+                    with open(logfile_path, "a") as log:
+                        log.write("Copy %s to the destination:%s"%(file,os.path.abspath(target_path))+"\n\n")
+                else:
+                    path2 = os.path.join(os.path.abspath(target_path), file)
+                    neof = path2 + '.jm'
+                    #crypt_files(path, neof, key_file,file)
+                    supercrypt_files(path,neof,key_file,file)
         return True
     else:
         return False
@@ -54,8 +96,13 @@ def copyandJiemi(src_path, target_path,key_file):
     if not os.path.exists(target_path):
         os.mkdir(target_path)
     if os.path.isdir(src_path) and os.path.isdir(target_path):
+        logfile ="jiemiLog.txt"
+        logfile_path = os.path.join(os.getcwd(), logfile)
+
         filelist_src = os.listdir(src_path)
         for file in filelist_src:
+            if file[0]==".":
+                continue
             path = os.path.join(os.path.abspath(src_path), file)
             if os.path.isdir(path):
                 path1 = os.path.join(os.path.abspath(target_path), file)
@@ -63,16 +110,43 @@ def copyandJiemi(src_path, target_path,key_file):
                     os.mkdir(path1)
                 copyandJiemi(path, path1, key_file)
             else:
-                print("jiemiName:%s:"%(path))
-                path2 = os.path.join(os.path.abspath(target_path), file)
-                print("path2:",path2)
-                path2_suffix = path2.split(".")[-1]
-                #print(path2_suffix)
-                neof = path2.split("."+path2_suffix)[0]
-                print("neof:",neof)
-                newpath = Super_jiemifiles(path, neof,key_file)
-                print("newpath:",newpath)
-                crypt_file(path, newpath, key_file)
+                if ".patch" in file:
+                    print("this file %s ends with .patch, manually copy!!!"%file)
+                    patch_file_path = os.path.join(os.path.abspath(target_path),file)
+                    print("this patch file's destination path is:",patch_file_path)
+                    with open(logfile_path,"a") as jiemilog:
+                        jiemilog.write("patch file path should be manually copied to the %s"%patch_file_path+"\n\n")
+
+                elif ".so" in file and file.split(".")[-1]=="so":
+                    print("this file is so,just copy it")
+                    path1 = os.path.join(os.path.abspath(target_path), file)
+                    shutil.copy(path, path1)
+                    with open(logfile_path, "a") as log:
+                        log.write("Copy %s to the destination:%s"%(file,os.path.abspath(target_path))+"\n\n")
+                elif ".a" in file and file.split(".")[-1] == "a":
+                    print("this file is .a file, just copy it")
+                    path1 = os.path.join(os.path.abspath(target_path), file)
+                    shutil.copy(path, path1)
+                    with open(logfile_path, "a") as log:
+                        log.write("Copy %s to the destination:%s"%(file,os.path.abspath(target_path))+"\n\n")
+                elif file.split(".")[-1]=="zip" and ".zip" in file:
+                    print("this file is .zip file, just copy it")
+                    path1 = os.path.join(os.path.abspath(target_path), file)
+                    shutil.copy(path, path1)
+                    with open(logfile_path, "a") as log:
+                        log.write("Copy %s to the destination:%s"%(file,os.path.abspath(target_path))+"\n\n")
+
+                else:
+                    print("jiemiName:%s:"%(path))
+                    path2 = os.path.join(os.path.abspath(target_path), file)
+                    print("path2:",path2)
+                    path2_suffix = path2.split(".")[-1]
+                    #print(path2_suffix)
+                    neof = path2.split("."+path2_suffix)[0]
+                    print("neof:",neof)
+                    newpath = Super_jiemifiles(path, neof,key_file)
+                    print("newpath:",newpath)
+                    crypt_file(path, newpath, key_file)
         return True
     else:
         return False
@@ -101,24 +175,27 @@ def crypt_file(fi,fo,key_file):
     if fi == " " or fo == " " or key_file == " ":
         return
     k=get_key(key_file)
-    f=open(fi,'rb')
-    fc=f.read()
-    fe=open(fo,'wb')
-    flen=len(fc)
-    buff=[]
-    for i in range(flen):
-        c=i%len(k)
-        fo=fc[i]^k[c]
-        buff.append(fo)
-    fe.write(bytes(buff))
-    f.close()
-    fe.close()
+    try:
+        f=open(fi,'rb')
+        fc=f.read()
+        fe=open(fo,'wb')
+        flen=len(fc)
+        buff=[]
+        for i in range(flen):
+            c=i%len(k)
+            fo=fc[i]^k[c]
+            buff.append(fo)
+        fe.write(bytes(buff))
+        f.close()
+        fe.close()
+    except:
+        print("it happened wired things! open a directory probably")
 
 def Super_jiemifiles(fi,fo, key_file):
     print("Input Jiemifiles:",fi)
     print("Output Jiemifiles:",fo)
     #取到加密的文件name
-    filename = fo.split("\\")[-1]
+    filename = fo.split("/")[-1]
     prefix_name = fo.split(filename)[0]
     print('prefix_name：',prefix_name)
     print("filename:",filename)
@@ -215,6 +292,7 @@ def supercrypt_files(fi,absfo,key_file,name):
     if fi == " " or key_file == " ":
         return
     k=get_key(key_file)
+
     f=open(fi,'rb')
     fc=f.read()
 
@@ -224,18 +302,36 @@ def supercrypt_files(fi,absfo,key_file,name):
     newname = crypt_filename(name, key_file)
     newname = absfo+newname+".jm"
     print("filenewname:",newname)
+    
 
-
-    fe = open(newname,"wb")
-    flen=len(fc)
-    buff=[]
-    for i in range(flen):
-        c=i%len(k)
-        fo=fc[i]^k[c]
-        buff.append(fo)
-    fe.write(bytes(buff))
+    try:
+        fe = open(newname,"wb")
+        flen=len(fc)
+        buff=[]
+        for i in range(flen):
+            c=i%len(k)
+            fo=fc[i]^k[c]
+            buff.append(fo)
+        fe.write(bytes(buff))
+        
+    except:
+        print("it uses nimabi name anyway!!!!!")
+        newname = "nimabi"+ name
+        newname = absfo+newname+".jm"
+        fe=open(newname,"wb")
+        print("after reopen files........!!!!")
+        flen=len(fc)
+        buff=[]
+        for i in range(flen):
+            c=i%len(k)
+            fo=fc[i]^k[c]
+            buff.append(fo)
+        fe.write(bytes(buff))
     f.close()
     fe.close()
+    
+
+
 
 
 if __name__=='__main__':
@@ -282,7 +378,7 @@ if __name__=='__main__':
             copyandJiemi(args[1],args[2],args[3])
             exit(0)
 
-    print('Done!')
+    print('Done!!!!!')
 
 
 
