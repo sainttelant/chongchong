@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
+
+# In[2]:
+
+
 import requests
 from lxml import etree
 from io import BytesIO
@@ -13,6 +17,22 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.application import MIMEApplication
+from generateSSRfile import write2json, generateconfig
+import time
+
+"""
+#以下是使用sudo权限写入
+"""
+import os
+import sys
+import subprocess
+
+if os.geteuid() == 0:
+    print("We're root!")
+else:
+    print("We're not root.")
+    subprocess.call(['sudo', 'python3', *sys.argv])
+    sys.exit()
 
 try:
     import cookielib
@@ -50,6 +70,7 @@ class SSR:
         self.session = requests.session()
         # 生成github_cookie文件
         self.session.cookies = cookielib.LWPCookieJar(filename='github_cookie')
+        self.ssraddress = []
     
     def load_cookie(self):
         try:
@@ -120,6 +141,47 @@ class SSR:
             return True
         else:
             return False 
+    
+    def geturlink(self):
+        urlalvin ="https://github.com/Alvin9999/new-pac/wiki/ss%E5%85%8D%E8%B4%B9%E8%B4%A6%E5%8F%B7"
+        headers = {
+            'Host': 'github.com',
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36'
+        }
+        ret = self.session.get(urlalvin, headers= headers)
+        sp =soup(ret.content,"lxml")
+        for urladdress in sp.select("div.markdown-body p"):
+            address = urladdress.get_text()
+            if "ssr://" in address:
+                self.ssraddress.append(address+"\n")
+
+    
+    def send2email(self):
+        sender = '525324158@qq.com'
+        receiver1 ='525324158@qq.com'
+        psw = 'zfullrbuddrmbhjh'
+        content = 'this is a email sended via python'
+        content1 = "\n\t".join(self.ssraddress)
+        msg = MIMEText(content1,'html','utf-8')
+        msg['From'] = 'kexueshangwang'
+        msg['To'] = receiver1
+        msg['Subject'] = '酸酸乳'
+        #发送word附件
+        word = MIMEApplication(open('SSR.csv','rb').read())
+        word.add_header('Content-Disposition', 'attachment', filename='SSR.csv')
+        multipart = MIMEMultipart()
+        multipart.attach(msg)
+        multipart.attach(word)
+        try:
+            s = smtplib.SMTP_SSL('smtp.qq.com',465)
+            s.login(sender,psw)
+            s.sendmail(sender,receiver1,multipart.as_bytes())
+            print('succeed')
+        except:
+            print('erro')
+    
+       
         
     def Switch2Alvin999(self):
         count = 0
@@ -155,7 +217,7 @@ class SSR:
         jm ={"加密":self.security}
         xy ={"协议":self.protobuf}
         hh ={"混合":self.mixed}
-        return gj,dz,dk,mm,jm,xy,hh
+        return gj,dz,dk,mm,jm,xy,hh, self.address, self.port,self.pword,self.security
     
 def transfer2frame(a,b,c,d,e,f,g):
     fra=DataFrame(a)
@@ -167,33 +229,39 @@ def transfer2frame(a,b,c,d,e,f,g):
     frg =DataFrame(g)
     return fra,frb,frc,frd,fre,frf,frg
 
-def send2email():
-    sender = '525324158@qq.com'
-    receiver1 ='525324158@qq.com'
-    psw = 'zfullrbuddrmbhjh'
-    content = 'this is a email sended via python'
-    msg = MIMEText(content,'html','utf-8')
-    msg['From'] = 'who knows'
-    msg['To'] = receiver1
-    msg['Subject'] = 'whatever'
-
-
-
-    #发送word附件
-    word = MIMEApplication(open('SSR.csv','rb').read())
-    word.add_header('Content-Disposition', 'attachment', filename='SSR.csv')
-
-
-    multipart = MIMEMultipart()
-    multipart.attach(word)
-
-    s = smtplib.SMTP_SSL('smtp.qq.com',465)
-    s.login(sender,psw)
-    s.sendmail(sender,receiver1,multipart.as_bytes())
-    print('succeed')
     
 
 if __name__ =="__main__":
+    """
+    #定时刷的shell
+    while True:
+        time_now = time.strftime("%H:%M:%S", time.localtime()) # 刷新
+        if time_now == "15:25:00": #此处设置每天定时的时间
+            subject = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + " 定时喝酸奶"
+            print(subject)
+
+            time.sleep(2) # 因为以秒定时，所以暂停2秒，使之不会在1秒内执行多次
+            print("it is time to be free now")
+            username = 'sainttelant@163.com'
+            password = 'Xue198607wei'
+            country=[]
+            address=[]
+            port=[]
+            pword=[]
+            security=[]
+            protobuf=[]
+            mixed=[]
+            ssrCount = SSR(username, password,country,address,port,pword,security,protobuf,mixed)
+            if ssrCount.formLoginData()== True:
+                print("Login successfully, begin to switch ssrwebsite!")
+                a,b,c,d,e,f,g=ssrCount.Switch2Alvin999()
+                aa,bb,cc,dd,ee,ff,gg = transfer2frame(a,b,c,d,e,f,g)
+                df=pd.concat([aa,bb,cc,dd,ee,ff,gg],axis=1)
+                df.to_csv('SSR.csv',index=0)
+                send2email()
+            else:
+                print("Login Failed！！！")
+    """
     
     print("it is time to be free now")
     username = 'sainttelant@163.com'
@@ -208,13 +276,23 @@ if __name__ =="__main__":
     ssrCount = SSR(username, password,country,address,port,pword,security,protobuf,mixed)
     if ssrCount.formLoginData()== True:
         print("Login successfully, begin to switch ssrwebsite!")
-        a,b,c,d,e,f,g=ssrCount.Switch2Alvin999()
+        a,b,c,d,e,f,g, adr,ports,psws,meths=ssrCount.Switch2Alvin999()
+        l_adds = ssrCount.geturlink()
+
+
+        configs = generateconfig(adr,ports,psws,meths)
+        write2json(configs)
+        
         aa,bb,cc,dd,ee,ff,gg = transfer2frame(a,b,c,d,e,f,g)
         df=pd.concat([aa,bb,cc,dd,ee,ff,gg],axis=1)
         df.to_csv('SSR.csv',index=0)
-        send2email()
+        ssrCount.send2email()
     else:
-        print("Login Failed！！�?)
+        print("Login Failed！！！")
         
-    
+
+
+
+
+
 
