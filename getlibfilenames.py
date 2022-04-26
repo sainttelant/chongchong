@@ -31,7 +31,7 @@ def judgeFiles(path,allthing):
             print(str.split('department/')[1].split('?')[0])
             print(str.replace('department/','').replace("https://www.guahao.com/",''))
             """
-            tailname=abspath.split(".")[1]
+            tailname=files.split(".")[-1]
             if tailname=="lib":
                 
                 
