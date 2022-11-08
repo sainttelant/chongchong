@@ -1,0 +1,18 @@
+# 配置test.proto
+syntax="proto3";
+package test.abc;
+
+//Test
+message Test {
+    string name = 1;
+    uint32 speed = 2;
+    State state = 3; 
+    float time = 5;
+    bytes content = 6;
+    
+    enum State { 
+        STATE_OFF               = 0;
+        STATE_STANDBY           = 1; 
+        STATE_READY             = 2;
+    }
+};

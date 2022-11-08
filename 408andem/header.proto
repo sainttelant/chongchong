@@ -1,0 +1,34 @@
+/***
+ * MsgHeader, which is included by all other messages.
+ *
+ * Author: CTZS
+ */
+syntax = "proto3";
+
+option java_outer_classname = "MsgHeader";
+
+package pb;
+
+message Header
+{
+  enum TimeStampSource
+  {
+      UNKNOWN_SOURCE   =  0; /// UNKNOWN_SOURCE No information on the source at all
+      SENSOR           =  1; /// Timestamp is set by sensor
+      ALGO             =  2; /// Timestamp is set by algo
+  }
+
+  enum TimeStampSyncState
+  {
+      UNKNOWN_SYNC     =  0; /// UNKNOWN_SYNC No information on the sync state at all
+      NOT_SYNCED       =  1; /// timestamp is not synced at all
+      SYNCED_GTC       =  2; /// timestamp is synced with GTC mechanism
+      SYNCED_PTP       =  3; /// timestamp is synced with PTP mechanism
+      SYNCED_REPLAY    =  4; /// timestamp is synced by replay mechanism
+  }
+
+  int64               timestamp            =  1;  /// Timestamp value
+  TimeStampSource     timestamp_source     =  2;  /// Source of the timestamp
+  TimeStampSyncState  timestamp_sync_state =  3;  /// Sync state of the timestamp
+  string              timestamp_calendar   =  4;  ///Calendar timestamp value
+}
