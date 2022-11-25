@@ -9,7 +9,7 @@ import json
 import RadarObject_pb2
 
 scale = 800./600.
-edge = int(750 * scale)
+edge = int(600 * scale)
 max_distance = 270
 scale_y = 8.0 * scale
 scale_x = math.floor(edge / max_distance)
@@ -58,14 +58,30 @@ def translate_y(_y):
     return -float(_y) * scale_y + float(edge / 2)
 
 
-y_pos = 10
-x_pos = 66
+y_pos = 7
+x_pos = 39.9
 w_, l_ = 3.4, 12
+
+#右转碰线
+rightturn_pos = y_pos
+
+rightturn_x_start = 39.9
+rightturn_x_end = 25
+
+
+
+def has_turn_right(x, y):
+    if rightturn_x_end+l_>x> rightturn_x_end and y > rightturn_pos> y -w_:
+        return True
+    else:
+        return False
 
 
 def has_enter_coil(x, y):
     return x_pos + l_ > x > x_pos and y_pos > y > y_pos - w_
 
+def has_moving_straightway(x,y):
+    return rightturn_x_end+l_ >x > rightturn_x_end and rightturn_pos> y > rightturn_pos-w_
 
 def main(radar_no):
     print("eCAL {} ({})\n".format(ecal_core.getversion(), ecal_core.getdate()))
@@ -76,9 +92,16 @@ def main(radar_no):
     enter_coil_ids = set()
     enter_coil_count = 0
 
+    analysis_turnright_ids = set()
+    turn_right_count =  0 
+
+    analysis_moving_straight_ids= set()
+    move_straightway_count = 0
+
+
     azimuth = 0.0
     radar_azimuth = {'81': -0.03491, '82': 0.06702, '83': 0.0, '84': 0.0, '215': 0.0}
-    radar_stop_line = {'81': [30, 50, 53.1], '82': [28, 50, 53.4], '83': [27, 47, 50.8], '84': [34, 56, 59.35], '215': [20, 30, 39.9]}
+    radar_stop_line = {'81': [30, 50, 53.1], '82': [28, 50, 53.4], '83': [27, 47, 50.8], '84': [34, 56, 59.35], '215': [20, 25, 34.9]}
     radar_lane_line = {
         '81': [6.27, 3.27, 0.26, -2.72, -5.8, -9.14, -12.48, -15.79, -19.03, -22.33],
         '82': [5.56, 1.96, -1.54, -5.04, -6.4, -9.91, -13.43],
@@ -108,6 +131,7 @@ def main(radar_no):
     cv2.putText(img_tpl,"Coil",(int(translate_y(y_pos+3)),int(translate_x(x_pos-1))), cv2.FONT_ITALIC, 0.6, (0, 0, 0), 2)
     cv2.rectangle(img_tpl, (int(translate_y(y_pos)), int(translate_x(x_pos))), (int(translate_y(y_pos-w_)), int(translate_x(x_pos+l_))), (255, 0, 0))
 
+   
     # 画停止线
     counter=0
     for sl in stop_line if stop_line is not None else []:
@@ -131,7 +155,11 @@ def main(radar_no):
     img = np.copy(img_tpl)
     remain_deleted = []
     old_em_msg = ''
-
+    
+     #统计右转车道的设计与算法
+    cv2.line(img_tpl, (int(translate_y(rightturn_pos)),int(translate_x(rightturn_x_start))), \
+        (int(translate_y(rightturn_pos)),int(translate_x(rightturn_x_end))),(100,100,100),2)
+    
     i = 0
     while ecal_core.ok():
         _, msg, _ = sub408.receive(500)
@@ -139,9 +167,17 @@ def main(radar_no):
             continue
 
 
-        info = '%d' % enter_coil_count
-        cv2.putText(img, info, (int(translate_y(15)), int(translate_x(65))), cv2.FONT_ITALIC, 0.9, (255, 0, 0), 1)
+        info = 'EnterTotal:%d' % enter_coil_count
+        cv2.putText(img, info, (int(translate_y(25)), int(translate_x(80))), cv2.FONT_ITALIC, 0.6, (255, 0, 0), 1)
 
+        #统计右转
+        info = 'TurnRight:%d' % turn_right_count
+        cv2.putText(img, info, (int(translate_y(25)), int(translate_x(70))), cv2.FONT_ITALIC, 0.6, (255, 0, 0), 1)
+        #统计继续前行
+
+        info = 'move_straight:%d' % move_straightway_count
+        cv2.putText(img, info, (int(translate_y(25)), int(translate_x(60))), cv2.FONT_ITALIC, 0.6, (255, 0, 0), 1)
+        
         i += 1
         if i >= 1:
             cv2.imshow('pc0%s' % radar_no, img)
@@ -203,7 +239,7 @@ def main(radar_no):
             if flag:
                 if float(x) > max_distance:
                     continue
-
+                
                 count += 1
                 frame_ids.add(_id)
 
@@ -231,10 +267,24 @@ def main(radar_no):
                     if has_enter_coil(x, y):
                         if abs(orientation) < math.pi/4 or abs(abs(orientation) - math.pi) < math.pi/4:
                             enter_coil_ids.add(_id)
-                            enter_coil_count += 1
+                            enter_coil_count += 1  
+                            if _id not in analysis_turnright_ids:
+                                if has_turn_right(x, y):
+                                    analysis_turnright_ids.add(_id)
+                                    turn_right_count+=1
                         else:
                             print('OOO:%s,%d', _id, orientation)
+                if _id not in analysis_moving_straight_ids:
+                    if has_moving_straightway(x, y):
+                        move_straightway_count+=1
+                        analysis_moving_straight_ids.add(_id)            
+                
+                if _id not in analysis_turnright_ids:
+                    if has_turn_right(x,y):
+                        turn_right_count+=1
+                        analysis_turnright_ids.add(_id)
 
+                    
                 # x = abs(float((float(x) - max_distance/2) * scale_x) - float(edge/2))
                 x = translate_x(x)
                 # y = -float(y) * scale_y + float(edge/2)
@@ -258,7 +308,7 @@ def main(radar_no):
                 cv2.circle(img, (y, x), 3, (b, g, r), thickness=1)
                 arrow(img, orientation, y, x, 18, (b, g, r))
 
-                # info = ' %s-%s,%.2f,%.2f' % (_id, poe, vx, vy)
+                #info = ' %s,X:%.2f,Y:%.2f' % (_id, _x, _y)
                 info = ' %s' % _id
                 cv2.putText(img, info, (y, x-1), cv2.FONT_ITALIC, 0.4, (b, g, r), 1)
 
@@ -266,10 +316,21 @@ def main(radar_no):
                 _w = float(_w)*5
                 cv2.line(img, (y, int(x-_l/2)), (y, int(x+_l/2)), (b, g, r))
                 cv2.line(img, (int(y-_w/2), x), (int(y+_w/2), x), (b, g, r))
+        
+        
+        
 
         for eci in enter_coil_ids.copy():
             if eci not in frame_ids:
                 enter_coil_ids.remove(eci)
+           
+        for movstr in analysis_moving_straight_ids.copy():
+            if movstr not in frame_ids:
+                analysis_moving_straight_ids.remove(movstr)
+
+        for turnids in analysis_turnright_ids.copy():
+            if turnids not in frame_ids:
+                analysis_turnright_ids.remove(turnids)
 
         cv2.putText(img, '%d' % count, (5, 30), cv2.FONT_HERSHEY_DUPLEX, 1.0, (0, 0, 255), 1)
         cv2.putText(img, 'azimuth: %.4f' % azimuth, (5, 50), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1)
@@ -281,6 +342,7 @@ def main(radar_no):
 if __name__ == "__main__":
     print("begin to tuning non-motor display!!<<<")
     radar_no = str(sys.argv[1])
+    #radar_no = "215"
     main(radar_no)
 
 

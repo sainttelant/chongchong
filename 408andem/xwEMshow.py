@@ -62,8 +62,46 @@ x_pos = 66
 w_, l_ = 3.4, 12
 
 
+class MovingObj:
+
+    def __init__(self, id,rId,info,timeupdate,timein,X_start, X_position,Y_position,length,width, curspeed, \
+        orientation,lane,acceleration, altitude, RCS,CF):
+        self.id = id
+        self.rId = rId
+        self.info = info
+        self.timeupdate = timeupdate
+        self.Y_position =Y_position
+        self.curspeed = curspeed
+        self.orientation = orientation
+        self.lane = lane
+        self.acceleration = acceleration
+        self.altitude = altitude
+        self.RCS = RCS
+        self.CF = CF
+        self.timein = timein
+        self.X_position = X_position
+        self.X_start = X_start
+        self.length = length
+        self.width = width
+        self.speed = 0
+    
+    def has_enter_anverage_speed_line(self):
+        return self.X_position + self.length > self.X_start > self.X_position
+    
+    def calculate_instant_speed(self, currenttime):
+        speed=(self.X_position-self.X_start)/(currenttime-self.timein)
+        self.speed = speed*1000000
+        
+
+
+
+
+
 def has_enter_coil(x, y):
     return x_pos + l_ > x > x_pos and y_pos > y > y_pos - w_
+
+
+    
 
 
 def main(radar_no):
@@ -200,6 +238,8 @@ def main(radar_no):
                 if float(x) > max_distance:
                     continue
 
+
+
                 count += 1
                 #set，每帧有哪些车辆，每帧会清掉
                 frame_ids.add(_id)
@@ -292,8 +332,14 @@ def main(radar_no):
                 continue
         old_em_msg = msg
         j = json.loads(msg)
+
+        currenttime = j.get("time")
+
+
         if j.get('objects') is None:
             continue
+
+
 
         # 当前帧的em输出对象集合
         a = [[obj, True] for obj in j['objects']]
@@ -304,20 +350,40 @@ def main(radar_no):
         # 维护的帧到头了，删除的集合
         c = [[obj, False] for obj, n in remain_deleted if n > 0]
 
+        Movingobj_l = []
+
         for obj, from_em in a + b + c:
             #雷达的一个跟踪id，一个检测id
             _id = obj['id']
             _rId = obj.get('rId', -1)
-
+            _speed = obj["speed"]
             _x = obj['PosX']
             _y = obj['PosY']
+            _info = obj['info']
+            if _info == None:
+                _info = "normal"
+            _timeupdate = obj["time_since_last_update"]
+            _l = obj["length"]
+            _w = obj["width"]
+            _lane = obj["lane"]
+            _acceleration = obj["acceleration"]
+            _altitude = 0 
+            _RCS = obj["RCS"]
+            _CF = obj["CF"]
+            _orientation = obj["orientation"]
+            movingObj = MovingObj(_id,_rId,_info,_timeupdate,0,200,_x,_y,_l,_w,_speed,_orientation, \
+                _lane,_acceleration,_altitude,_RCS,_CF)
+      
+            Movingobj_l.append(movingObj)
             
-            XW_info:str = ""
-            _info: str = obj.get('info', '')
-            _orientation = obj['orientation']
+            if movingObj.has_enter_anverage_speed_line():
+                #movingObj.timein = currenttime
+                movingObj.calculate_instant_speed(currenttime)
+
+
             #em输出弧度，转成角度
             _orientation = _orientation / 180.0 * math.pi
-            _speed = obj['speed']
+
             #最好一次更新的时间
 
             _time_since_last_update = obj.get('time_since_last_update')
@@ -340,7 +406,7 @@ def main(radar_no):
                 
                 #被合并或者删除，画灰色
                 cl = (160, 160, 160)
-                XW_info= "deleted_be_merged"
+                movingObj.info= "deleted_be_merged"
                 thickness = 1
                 if from_em:
                     remain_deleted.append([obj, 13])
@@ -348,28 +414,28 @@ def main(radar_no):
             elif _rId == -1:
                 #蓝色代表预测的
                 cl = (255, 0, 0)
-                XW_info = "pre"
+                movingObj.info = "pre"
             else:
                 #新生成的对象是紫色的
                 if -1 != _info.find('new;'):
                     cl = (255, 0, 255)
-                    XW_info = "new_Det"
+                    movingObj.info = "new_Det"
                     # thickness = 3
                 #禁止合并，
                 elif -1 != _info.find('disable_merge;'):
                     #红色
                     cl = (0, 0, 255)
-                    XW_info="disable_merge"
+                    movingObj.info="disable_merge"
                 elif -1!=_info.find('force_merge'):
                     cl =(0,100,255)
-                    XW_info = "force_merge"
+                    movingObj.info = "force_merge"
                 else:
                     #检测到的目标 绿色
                     cl = (0, 150, 0)
 
             if -1 != _info.find('new_merged;'):
                 thickness = 1
-                XW_info ="new_M"
+                movingObj.info ="new_M"
             # 瞬时的时刻，虽然合并了，但是角度偏差大，需要特别注意下，有可能错误关联上的目标
             if -1 != _info.find('!radian;'):
                 b_radian = True
@@ -379,7 +445,7 @@ def main(radar_no):
             
             if -1 == _info.find('deleted;'):
                 #cv2.circle(img, (y, x), 13, cl, thickness)
-                cv2.putText(img,XW_info,(y-3,x+5),cv2.FONT_ITALIC,0.4,cl,thickness)
+                cv2.putText(img,movingObj.info,(y-3,x+5),cv2.FONT_ITALIC,0.4,cl,thickness)
             else:
                 cv2.line(img, (y - 6, x - 6), (y + 6, x + 6), cl, thickness)
                 cv2.line(img, (y + 6, x - 6), (y - 6, x + 6), cl, thickness)

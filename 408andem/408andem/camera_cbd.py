@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
         frm = cv2.resize(frm, (500, 500))
         frm = frm[0:-100, 100:]
-        cv2.circle(frm, (89, 195), 25, (0, 0, 255), lineType=cv2.LINE_AA)
+        #cv2.circle(frm, (89, 195), 25, (0, 0, 255), lineType=cv2.LINE_AA)
         # cv2.circle(frm, (120, 70), 25, (0, 0, 255), lineType=cv2.LINE_AA)
 
         cv2.namedWindow('camera-215', cv2.WINDOW_NORMAL)

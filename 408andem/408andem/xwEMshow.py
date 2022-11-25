@@ -6,9 +6,13 @@ import ecal.core.core as ecal_core
 from ecal.core.subscriber import StringSubscriber
 
 import json
+import time 
+
+import datetime
+
 
 scale = 800./600.
-edge = int(750 * scale)
+edge = int(600 * scale)
 max_distance = 270
 scale_y = 8.0 * scale
 scale_x = math.floor(edge / max_distance)
@@ -65,7 +69,7 @@ w_, l_ = 3.4, 12
 class MovingObj:
 
     def __init__(self, id,rId,info,timeupdate,timein,X_start, X_position,Y_position,length,width, curspeed, \
-        orientation,lane,acceleration, altitude, RCS,CF):
+        orientation,lane,acceleration, altitude, RCS,CF,accessCount,accessflag):
         self.id = id
         self.rId = rId
         self.info = info
@@ -84,25 +88,34 @@ class MovingObj:
         self.length = length
         self.width = width
         self.speed = 0
+        self.accessCount = 1
+        self.accessflag = False
+        self.sumspeed = 0
     
     def has_enter_anverage_speed_line(self):
-        return self.X_position + self.length > self.X_start > self.X_position
+
+        if (self.X_start>self.X_position) and (self.Y_position > -2):
+            return True
+        else:
+            return False
+        #return self.X_start > self.X_position
     
-    def calculate_instant_speed(self, currenttime):
-        speed=(self.X_position-self.X_start)/(currenttime-self.timein)
-        self.speed = speed*1000000
-        
+    def calculate_instant_speed(self):
+        speed=3.6*(X_start-self.X_position)/(0.07*self.accessCount)
+        self.speed = speed
+        #print("average speed:",self.speed)
 
-
-
+    def calc_speed(self):
+        self.sumspeed += self.curspeed
+        self.accessCount+=1
+        self.speed = self.sumspeed/self.accessCount
 
 
 def has_enter_coil(x, y):
     return x_pos + l_ > x > x_pos and y_pos > y > y_pos - w_
 
 
-    
-
+   
 
 def main(radar_no):
     print("eCAL {} ({})\n".format(ecal_core.getversion(), ecal_core.getdate()))
@@ -117,7 +130,7 @@ def main(radar_no):
     azimuth = 0.0
     #雷达相当于车道线的角度值,弧度值,上位机上面调,(上位机是角度,要转成弧度)
     radar_azimuth = {'81': -0.03491, '82': 0.06702, '83': 0.0, '84': 0.0, '215': 0.0}
-    radar_stop_line = {'81': [30, 50, 53.1], '82': [28, 50, 53.4], '83': [27, 47, 50.8], '84': [34, 56, 59.35], '215': [20, 30, 39.9]} #第一个是盲区,39.9表示停止线,30表示停止线前移,为了统计效果
+    radar_stop_line = {'81': [30, 50, 53.1], '82': [28, 50, 53.4], '83': [27, 47, 50.8], '84': [34, 56, 59.35], '215': [20, 25, 34.9]} #第一个是盲区,39.9表示停止线,30表示停止线前移,为了统计效果
     radar_lane_line = {
         '81': [6.27, 3.27, 0.26, -2.72, -5.8, -9.14, -12.48, -15.79, -19.03, -22.33],
         '82': [5.56, 1.96, -1.54, -5.04, -6.4, -9.91, -13.43],
@@ -145,9 +158,10 @@ def main(radar_no):
     #cv2.circle(img_tpl, (int(translate_y(8.5)), int(translate_x(72))), 25, (0, 0, 255))
 
     # 线圈是矩形,用户真实需要的需求
+    """
     cv2.putText(img_tpl,"Coil",(int(translate_y(y_pos+3)),int(translate_x(x_pos-1))), cv2.FONT_ITALIC, 0.6, (0, 0, 0), 2)
     cv2.rectangle(img_tpl, (int(translate_y(y_pos)), int(translate_x(x_pos))), (int(translate_y(y_pos-w_)), int(translate_x(x_pos+l_))), (255, 0, 0))
-
+    """
     # 画停止线
     counter=0
     for sl in stop_line if stop_line is not None else []:
@@ -173,6 +187,12 @@ def main(radar_no):
     remain_deleted = []
     old_em_msg = ''
 
+
+    # 维护的OBj 队列
+    dict_MovingObjs={}
+
+
+
     i = 0
     cv2.namedWindow("pc0%s"%radar_no,1)
     while ecal_core.ok():
@@ -181,9 +201,10 @@ def main(radar_no):
             pass
 
         #打印出数字出来
+        """
         info = '%d' % enter_coil_count
         cv2.putText(img, info, (int(translate_y(15)), int(translate_x(65))), cv2.FONT_ITALIC, 0.9, (255, 0, 0), 1)
-
+        """
         i += 1
         if i >= 1:
             cv2.imshow('pc0%s' % radar_no, img)
@@ -228,102 +249,7 @@ def main(radar_no):
 
         count = 0
         frame_ids = set()
-        lines = msg.split('\n')
-        for line in lines:
-            items = line.split(',')
-            #”txt“开头的每行有12个字段
-            if len(items) == 12:
-                _id, x, y, vx, vy, prop, rcs, measState, poe, _l, _w, class_type = items
-                #为了展示看的距离设定的
-                if float(x) > max_distance:
-                    continue
-
-
-
-                count += 1
-                #set，每帧有哪些车辆，每帧会清掉
-                frame_ids.add(_id)
-
-                _rcs = rcs
-                _x, _y = x, y
-                vx, vy = float(vx), float(vy)
-                _vx, _vy = vx, vy
-                #方位角修正，从雷达收到的原始数据修正
-                vx = math.cos(azimuth) * _vx - math.sin(azimuth) * _vy
-                vy = math.cos(azimuth) * _vy + math.sin(azimuth) * _vx
-
-                #根据速度计算相对雷达的角度
-                orientation = math.atan2(abs(-vy), abs(vx))
-                if vx >= 0 and -vy <= 0:
-                    orientation = -orientation
-                elif vx <= 0 and -vy >= 0:
-                    orientation = math.pi - orientation
-                elif vx <= 0 and -vy <= 0:
-                    orientation = -math.pi + orientation
-                orientation = wrap_angle_once(orientation)
-
-                xs, ys = float(x), float(y)
-                x = math.cos(azimuth) * xs - math.sin(azimuth) * ys
-                y = math.cos(azimuth) * ys + math.sin(azimuth) * xs
-
-
-                #做非机动车统计，进入线圈，特殊的case
-                if _id not in enter_coil_ids:
-                    if has_enter_coil(x, y):
-                        if abs(orientation) < math.pi/4 or abs(abs(orientation) - math.pi) < math.pi/4:
-                            enter_coil_ids.add(_id)
-                            enter_coil_count += 1
-                        else:
-                            print('OOO:%s,%d', _id, orientation)
-
-                # x = abs(float((float(x) - max_distance/2) * scale_x) - float(edge/2))
-                #折算到pixel 坐标
-                x = translate_x(x)
-                # y = -float(y) * scale_y + float(edge/2)
-                y = translate_y(y)
-                if y < 0 or y > edge:
-                    continue
-
-                x, y = int(x), int(y)
-                prop = int(prop)
-                rcs = int(rcs)
-
-
-                #拉长点画图，便于区分颜色
-                rcs *= 4
-                r = g = b = 0
-                if rcs > 0:
-                    r = rcs
-                    r = 255 if r > 255 else r
-                else:
-                    b = abs(rcs)
-                    b = 255 if b > 255 else b
-                
-                #画识别目标小点
-                cv2.circle(img, (y, x), 3, (b, g, r), thickness=1)
-                #画尾翼角度。
-                arrow(img, orientation, y, x, 18, (b, g, r))
-
-                # info = ' %s-%s,%.2f,%.2f' % (_id, poe, vx, vy)
-                info = ' %s' % _id
-                cv2.putText(img, info, (y, x-1), cv2.FONT_ITALIC, 0.4, (b, g, r), 1)
-
-                _l = float(_l)*5
-                _w = float(_w)*5
-                #画十字架，代表车的长宽
-                cv2.line(img, (y, int(x-_l/2)), (y, int(x+_l/2)), (b, g, r))
-                cv2.line(img, (int(y-_w/2), x), (int(y+_w/2), x), (b, g, r))
-        
-        #非机动车统计
-        for eci in enter_coil_ids.copy():
-            if eci not in frame_ids:
-                enter_coil_ids.remove(eci)
-
-        cv2.putText(img, '%d' % count, (5, 30), cv2.FONT_HERSHEY_DUPLEX, 1.0, (0, 0, 255), 1)
-        #调整过后的方位角显示
-        cv2.putText(img, 'azimuth: %.4f' % azimuth, (5, 50), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1)
-
-
+     
         #针对em的画图
         _, msg, _ = sub_em.receive()
         if msg == '':
@@ -334,13 +260,11 @@ def main(radar_no):
         j = json.loads(msg)
 
         currenttime = j.get("time")
-
-
+        
+        
         if j.get('objects') is None:
             continue
-
-
-
+       
         # 当前帧的em输出对象集合
         a = [[obj, True] for obj in j['objects']]
         # 被删除对象的集合，瞬时删除的，特别维护了一段时间
@@ -350,12 +274,13 @@ def main(radar_no):
         # 维护的帧到头了，删除的集合
         c = [[obj, False] for obj, n in remain_deleted if n > 0]
 
-        Movingobj_l = []
+        
 
         for obj, from_em in a + b + c:
             #雷达的一个跟踪id，一个检测id
             _id = obj['id']
             _rId = obj.get('rId', -1)
+            # 雷达测的即时速度
             _speed = obj["speed"]
             _x = obj['PosX']
             _y = obj['PosY']
@@ -371,18 +296,36 @@ def main(radar_no):
             _RCS = obj["RCS"]
             _CF = obj["CF"]
             _orientation = obj["orientation"]
-            movingObj = MovingObj(_id,_rId,_info,_timeupdate,0,200,_x,_y,_l,_w,_speed,_orientation, \
-                _lane,_acceleration,_altitude,_RCS,_CF)
-      
-            Movingobj_l.append(movingObj)
             
-            if movingObj.has_enter_anverage_speed_line():
-                #movingObj.timein = currenttime
-                movingObj.calculate_instant_speed(currenttime)
+            movingObj = MovingObj(_id,_rId,_info,_timeupdate,0,200,_x,_y,_l,_w,_speed,_orientation, \
+                _lane,_acceleration,_altitude,_RCS,_CF,1,False)
+            
+           
 
+
+            # 进入平均车速计算环节
+            if movingObj.has_enter_anverage_speed_line() or movingObj.accessflag== True:
+                
+                movingObj.accessflag = True
+             
+                in_movingObj = { _id: movingObj }
+
+                if movingObj.id not in dict_MovingObjs.keys():
+                   
+                    dict_MovingObjs.update(in_movingObj)
+                   
+                else:
+                    dict_MovingObjs[_id].curspeed = _speed
+                    dict_MovingObjs[_id].X_position = _x
+                    dict_MovingObjs[_id].Y_position = _y
+                    dict_MovingObjs[_id].accessCount+=1
+         
+            
 
             #em输出弧度，转成角度
             _orientation = _orientation / 180.0 * math.pi
+
+            
 
             #最好一次更新的时间
 
@@ -398,8 +341,6 @@ def main(radar_no):
                 continue
             x, y = int(x), int(y)
             thickness = 1
-
-
 
             if -1 != _info.find('deleted;')\
                     or -1 != _info.find('be_merged;'):
@@ -428,7 +369,7 @@ def main(radar_no):
                     movingObj.info="disable_merge"
                 elif -1!=_info.find('force_merge'):
                     cl =(0,100,255)
-                    movingObj.info = "force_merge"
+                    movingObj.info = "force_merge"  
                 else:
                     #检测到的目标 绿色
                     cl = (0, 150, 0)
@@ -456,13 +397,26 @@ def main(radar_no):
 
             # info = '%d,%.2f' % (_id, _orientation)
             #info = '%d-%.1f' % (_id, _time_since_last_update)
-            info = '%d_%.2f' % (_id,_speed)
-            # info = '%d,%.2f' % (_id, _speed)
-            cv2.putText(img, info, (y, x + 15), cv2.FONT_ITALIC, 0.36, (255, 0, 0), 1)
-        
+
+            
+            for allobj_dict in dict_MovingObjs.values():
+                allobj_dict.calc_speed()
+            
+            average_speed =0 
+            try:
+                average_speed = dict_MovingObjs[_id].speed
+            except:
+                average_speed = 0
+
+            #info = '%d_%.2f_AVSP_%.3f' % (_id,_speed,average_speed)
+            #info = '%d_Sp:%.2f' %(_id,_speed)
+            #cv2.putText(img, info, (y, x + 15), cv2.FONT_ITALIC, 0.36, (255, 0, 0), 1)
+            
+
         #根据最多保持多少帧的要消逝的目标
         remain_deleted = [[obj, n - 1] for obj, n in remain_deleted if n > 2]
-
+        
+           
 
 if __name__ == "__main__":
     print("begin to tuning non-motor display!!<<<")
