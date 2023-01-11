@@ -383,6 +383,11 @@ def main(radar_no):
                 # print("!radian:", _id)
                 cv2.putText(img, 'R', (y, x), cv2.FONT_HERSHEY_DUPLEX, 1.0, (0, 0, 255), 1)
             
+            if -1 != _info.find('Rollback!'):
+              
+                # print("!radian:", _id)
+                cv2.putText(img, 'Rollback', (y, x), cv2.FONT_HERSHEY_DUPLEX, 0.4, (0, 0, 255), 1)    
+
             
             if -1 == _info.find('deleted;'):
                 #cv2.circle(img, (y, x), 13, cl, thickness)
@@ -409,8 +414,8 @@ def main(radar_no):
                 average_speed = 0
 
             #info = '%d_%.2f_AVSP_%.3f' % (_id,_speed,average_speed)
-            #info = '%d_Sp:%.2f' %(_id,_speed)
-            #cv2.putText(img, info, (y, x + 15), cv2.FONT_ITALIC, 0.36, (255, 0, 0), 1)
+            info = '%d_Sp:%.2f' %(_id,_speed)
+            cv2.putText(img, info, (y, x + 15), cv2.FONT_ITALIC, 0.36, (255, 0, 0), 1)
             
 
         #根据最多保持多少帧的要消逝的目标

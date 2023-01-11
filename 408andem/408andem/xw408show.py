@@ -7,6 +7,11 @@ from ecal.core.subscriber import ProtoSubscriber
 #from ecal.core.subscriber import StringSubscriber
 import json
 import RadarObject_pb2
+import header_pb2
+import time
+import datetime
+import os
+
 
 scale = 800./600.
 edge = int(600 * scale)
@@ -83,11 +88,13 @@ def has_enter_coil(x, y):
 def has_moving_straightway(x,y):
     return rightturn_x_end+l_ >x > rightturn_x_end and rightturn_pos> y > rightturn_pos-w_
 
-def main(radar_no):
+def main(radar_no,write):
     print("eCAL {} ({})\n".format(ecal_core.getversion(), ecal_core.getdate()))
     ecal_core.initialize(sys.argv, "cluster_receive")
     ecal_core.set_process_state(1, 1, "I feel good")
-    sub408 = ProtoSubscriber("ARS4G0_ObjectListPb%s" % radar_no,RadarObject_pb2.RadarObject)
+    sub408 = ProtoSubscriber("ARS4G0_ObjectListPbXW%s" % radar_no,RadarObject_pb2.RadarObject)
+
+    #subheader = ProtoSubscriber("ARS4G0_ObjectListPbXW%s"%radar_no, header_pb2.Header)    
     #sub408 = StringSubscriber("Txt%s" % radar_no)
     enter_coil_ids = set()
     enter_coil_count = 0
@@ -128,10 +135,11 @@ def main(radar_no):
     #cv2.circle(img_tpl, (int(translate_y(8.5)), int(translate_x(72))), 25, (0, 0, 255))
 
     # 线圈是矩形,用户真实需要的需求
+    """
     cv2.putText(img_tpl,"Coil",(int(translate_y(y_pos+3)),int(translate_x(x_pos-1))), cv2.FONT_ITALIC, 0.6, (0, 0, 0), 2)
     cv2.rectangle(img_tpl, (int(translate_y(y_pos)), int(translate_x(x_pos))), (int(translate_y(y_pos-w_)), int(translate_x(x_pos+l_))), (255, 0, 0))
-
-   
+    """
+    
     # 画停止线
     counter=0
     for sl in stop_line if stop_line is not None else []:
@@ -157,16 +165,31 @@ def main(radar_no):
     old_em_msg = ''
     
      #统计右转车道的设计与算法
+    """
     cv2.line(img_tpl, (int(translate_y(rightturn_pos)),int(translate_x(rightturn_x_start))), \
         (int(translate_y(rightturn_pos)),int(translate_x(rightturn_x_end))),(100,100,100),2)
-    
+    """
+
+    # 写入ecal数据到txt
+    now = datetime.datetime.now()
+    currentdate = now.strftime("%Y-%m-%d")
+
+    if write:
+        if not os.path.exists("F:/%s/"%(currentdate)):
+            os.mkdir("F:/%s/"%(currentdate))
+            print("create new folder for store ecal txt \n")
+
+        file = open("F:/%s/ecalrecord.txt"%(currentdate),"w") 
+        file.write("time now is %s \n"%(currentdate))
+
     i = 0
     while ecal_core.ok():
         _, msg, _ = sub408.receive(500)
-        if msg == '':
+        #_,ecal_time,tts = subheader.receive(500)
+        if msg == "":
             continue
 
-
+        """
         info = 'EnterTotal:%d' % enter_coil_count
         cv2.putText(img, info, (int(translate_y(25)), int(translate_x(80))), cv2.FONT_ITALIC, 0.6, (255, 0, 0), 1)
 
@@ -177,7 +200,9 @@ def main(radar_no):
 
         info = 'move_straight:%d' % move_straightway_count
         cv2.putText(img, info, (int(translate_y(25)), int(translate_x(60))), cv2.FONT_ITALIC, 0.6, (255, 0, 0), 1)
-        
+        """
+
+
         i += 1
         if i >= 1:
             cv2.imshow('pc0%s' % radar_no, img)
@@ -222,7 +247,14 @@ def main(radar_no):
         count = 0
         frame_ids = set()	
         flag = True
+
+        ttss:int32=msg.header.timestamp
+        cv2.putText(img, 'timestamp:%d' % ttss, (12, 75), cv2.FONT_HERSHEY_DUPLEX, 0.6, (0, 100, 255), 1)
+        if write:
+            file.write("\n")
+        #print("ttss",ttss)
         for ele in msg.data:
+
             _id = ele.obj_id
             x = ele.obj_long_displ_m
             y = ele.obj_lat_displ_m
@@ -308,8 +340,10 @@ def main(radar_no):
                 cv2.circle(img, (y, x), 3, (b, g, r), thickness=1)
                 arrow(img, orientation, y, x, 18, (b, g, r))
 
-                #info = ' %s,X:%.2f,Y:%.2f' % (_id, _x, _y)
-                info = ' %s' % _id
+                info = ' %s,X:%.2f,Y:%.2f' % (_id, _x, _y)
+                if write:
+                    file.write("times:%d \t X:%.2f \t Y:%.2f \n"%(ttss,_x, _y ))
+                #info = ' %s' % _id
                 cv2.putText(img, info, (y, x-1), cv2.FONT_ITALIC, 0.4, (b, g, r), 1)
 
                 _l = float(_l)*5
@@ -331,18 +365,18 @@ def main(radar_no):
         for turnids in analysis_turnright_ids.copy():
             if turnids not in frame_ids:
                 analysis_turnright_ids.remove(turnids)
-
+        
         cv2.putText(img, '%d' % count, (5, 30), cv2.FONT_HERSHEY_DUPLEX, 1.0, (0, 0, 255), 1)
         cv2.putText(img, 'azimuth: %.4f' % azimuth, (5, 50), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1)
-
-       
-
-      
+    if write:
+        file.close()
 
 if __name__ == "__main__":
     print("begin to tuning non-motor display!!<<<")
     radar_no = str(sys.argv[1])
+    write:bool = sys.argv[2]
+    
     #radar_no = "215"
-    main(radar_no)
+    main(radar_no,write)
 
 
