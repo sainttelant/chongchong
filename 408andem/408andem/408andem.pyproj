@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>a30f9a48-ab09-489b-a2f4-282f60b71957</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>xw408show.py</StartupFile>
+    <StartupFile>record_408ecal.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -13,7 +13,7 @@
     <RootNamespace>408andem</RootNamespace>
     <InterpreterId>CondaEnv|CondaEnv|Anaconda3</InterpreterId>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>215</CommandLineArguments>
+    <CommandLineArguments>215 True</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -25,9 +25,11 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="camera4calibrate.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="camerarecord.py" />
     <Compile Include="camera_cbd.py" />
-    <Compile Include="camera_record.py" />
     <Compile Include="em_obj_540.py" />
     <Compile Include="header_pb2.py" />
     <Compile Include="my_paint_pc_one_stat4.py" />
@@ -38,7 +40,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="RadarObject_pb2.py" />
+    <Compile Include="v4l2Ecal.py" />
     <Compile Include="record_408ecal.py" />
+    <Compile Include="v4l2calibrate.py" />
     <Compile Include="xw408show.py" />
     <Compile Include="xwEMshow.py" />
     <Compile Include="_408andem.py" />

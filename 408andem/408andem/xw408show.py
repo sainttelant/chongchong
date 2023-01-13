@@ -183,6 +183,7 @@ def main(radar_no,write):
         file.write("time now is %s \n"%(currentdate))
 
     i = 0
+    photo_num = 0
     while ecal_core.ok():
         _, msg, _ = sub408.receive(500)
         #_,ecal_time,tts = subheader.receive(500)
@@ -253,6 +254,7 @@ def main(radar_no,write):
         if write:
             file.write("\n")
         #print("ttss",ttss)
+
         for ele in msg.data:
 
             _id = ele.obj_id
@@ -340,10 +342,10 @@ def main(radar_no,write):
                 cv2.circle(img, (y, x), 3, (b, g, r), thickness=1)
                 arrow(img, orientation, y, x, 18, (b, g, r))
 
-                info = ' %s,X:%.2f,Y:%.2f' % (_id, _x, _y)
+                #info = ' %s,X:%.2f,Y:%.2f' % (_id, _x, _y)
                 if write:
-                    file.write("times:%d \t X:%.2f \t Y:%.2f \n"%(ttss,_x, _y ))
-                #info = ' %s' % _id
+                    file.write("ID: %d \t times:%d \t X:%.2f \t Y:%.2f \n"%(_id,ttss,_x, _y ))
+                info = ' %s' % _id
                 cv2.putText(img, info, (y, x-1), cv2.FONT_ITALIC, 0.4, (b, g, r), 1)
 
                 _l = float(_l)*5
@@ -368,6 +370,13 @@ def main(radar_no,write):
         
         cv2.putText(img, '%d' % count, (5, 30), cv2.FONT_HERSHEY_DUPLEX, 1.0, (0, 0, 255), 1)
         cv2.putText(img, 'azimuth: %.4f' % azimuth, (5, 50), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1)
+        
+        #按键盘‘A’保存图像
+        photo_path = "F:/%s/"%(currentdate)
+        if key & 0xFF == ord('a'):
+            photo_num += 1
+            photo_name = photo_path + '/' + str(photo_num) + '.jpg'
+            cv2.imwrite(photo_name,img)
     if write:
         file.close()
 

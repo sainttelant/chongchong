@@ -24,9 +24,6 @@ if __name__ == "__main__":
         print("create folder for video recording!")
     recordpath = "F:/%s/"%(currentdate)
 
-
-
-
     address, user, pwd = radar_camera[radar_no]
     # 子码流
     #video_src = 'rtsp://%s:%s@%s:554/ch1/sub/av_stream' % (user, pwd, address)
