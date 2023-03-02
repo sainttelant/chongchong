@@ -92,7 +92,7 @@ def main(radar_no,write):
     print("eCAL {} ({})\n".format(ecal_core.getversion(), ecal_core.getdate()))
     ecal_core.initialize(sys.argv, "cluster_receive")
     ecal_core.set_process_state(1, 1, "I feel good")
-    sub408 = ProtoSubscriber("ARS4G0_ObjectListPbXW%s" % radar_no,RadarObject_pb2.RadarObject)
+    sub408 = ProtoSubscriber("ARS4G0_ObjectListPb%s" % radar_no,RadarObject_pb2.RadarObject)
 
     #subheader = ProtoSubscriber("ARS4G0_ObjectListPbXW%s"%radar_no, header_pb2.Header)    
     #sub408 = StringSubscriber("Txt%s" % radar_no)
@@ -342,10 +342,10 @@ def main(radar_no,write):
                 cv2.circle(img, (y, x), 3, (b, g, r), thickness=1)
                 arrow(img, orientation, y, x, 18, (b, g, r))
 
-                #info = ' %s,X:%.2f,Y:%.2f' % (_id, _x, _y)
+                info = ' %s,X:%.2f,Y:%.2f' % (_id, _x, _y)
                 if write:
                     file.write("ID: %d \t times:%d \t X:%.2f \t Y:%.2f \n"%(_id,ttss,_x, _y ))
-                info = ' %s' % _id
+                #info = ' %s' % _id
                 cv2.putText(img, info, (y, x-1), cv2.FONT_ITALIC, 0.4, (b, g, r), 1)
 
                 _l = float(_l)*5

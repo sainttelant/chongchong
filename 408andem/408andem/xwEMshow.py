@@ -17,7 +17,6 @@ max_distance = 270
 scale_y = 8.0 * scale
 scale_x = math.floor(edge / max_distance)
 
-
 def angle_diff(a, b):
     d1 = a - b
     d2 = 2 * math.pi - abs(d1)
@@ -117,12 +116,15 @@ def has_enter_coil(x, y):
 
    
 
-def main(radar_no):
+def main(radar_no,houzhui):
     print("eCAL {} ({})\n".format(ecal_core.getversion(), ecal_core.getdate()))
     ecal_core.initialize(sys.argv, "cluster_receive")
     ecal_core.set_process_state(1, 1, "I feel good")
     sub408 = StringSubscriber("Txt%s" % radar_no)
-    sub_em = StringSubscriber("structTrack_XW%s" % radar_no)
+    if houzhui=="":
+        sub_em = StringSubscriber("structTrack%s" % radar_no)
+    else:
+        sub_em = StringSubscriber("structTrack%s%s" % (houzhui,radar_no))
 
     enter_coil_ids = set()
     enter_coil_count:int = 0
@@ -184,6 +186,7 @@ def main(radar_no):
         cv2.putText(img_tpl, '%3d' % _ml, (10, ml), cv2.FONT_ITALIC, 0.4, (0, 0, 0), 1)
     #img_tpl是模板，划线的模板
     img = np.copy(img_tpl)
+    imgdels = np.copy(img_tpl)
     remain_deleted = []
     old_em_msg = ''
 
@@ -208,6 +211,7 @@ def main(radar_no):
         i += 1
         if i >= 1:
             cv2.imshow('pc0%s' % radar_no, img)
+            cv2.imshow("em_dels%s"%(radar_no),imgdels)
             key = cv2.waitKeyEx(1)
             if key == 27:  # Esc
                 ecal_core.finalize()
@@ -246,6 +250,7 @@ def main(radar_no):
 
             i = 0
             img = np.copy(img_tpl)
+            imgdels = np.copy(img_tpl)
 
         count = 0
         frame_ids = set()
@@ -304,10 +309,8 @@ def main(radar_no):
 
 
             # 进入平均车速计算环节
-            if movingObj.has_enter_anverage_speed_line() or movingObj.accessflag== True:
-                
+            if movingObj.has_enter_anverage_speed_line() or movingObj.accessflag== True: 
                 movingObj.accessflag = True
-             
                 in_movingObj = { _id: movingObj }
 
                 if movingObj.id not in dict_MovingObjs.keys():
@@ -324,8 +327,6 @@ def main(radar_no):
 
             #em输出弧度，转成角度
             _orientation = _orientation / 180.0 * math.pi
-
-            
 
             #最好一次更新的时间
 
@@ -346,7 +347,7 @@ def main(radar_no):
                     or -1 != _info.find('be_merged;'):
                 
                 #被合并或者删除，画灰色
-                cl = (160, 160, 160)
+                cl = (180, 0, 160)
                 movingObj.info= "deleted_be_merged"
                 thickness = 1
                 if from_em:
@@ -414,19 +415,64 @@ def main(radar_no):
                 average_speed = 0
 
             #info = '%d_%.2f_AVSP_%.3f' % (_id,_speed,average_speed)
-            info = '%d_Sp:%.2f' %(_id,_speed)
+            info = '%d:_orite_%.2f' %(_id,_orientation)
             cv2.putText(img, info, (y, x + 15), cv2.FONT_ITALIC, 0.36, (255, 0, 0), 1)
             
 
         #根据最多保持多少帧的要消逝的目标
-        remain_deleted = [[obj, n - 1] for obj, n in remain_deleted if n > 2]
-        
+        remain_deleted = [[obj, n - 1] for obj, n in remain_deleted if n >1]
+        for delsobj,nums in remain_deleted:
+            #print("delsobj:",delsobj)
+            _delsinfo = delsobj["info"]
+            _delsinfo.replace("deleted;","")
+           
+            _delsid = str(delsobj["id"])
+            if -1!= _delsinfo.find("stoppedbuttraveledtooless"):
+                print("delsobj's rId:",delsobj["id"],delsobj["info"])
+                cv2.putText(imgdels, _delsid+"_"+_delsinfo[7:],(y-3,x+5),cv2.FONT_ITALIC,0.6,cl,thickness)
+                cv2.line(imgdels, (y - 9, x - 9), (y + 9, x + 9), cl, thickness)
+                cv2.line(imgdels, (y + 9, x - 9), (y - 9, x + 9), cl, thickness)
+                cv2.waitKey(300)
+            if -1!= _delsinfo.find("stoppedtimegreat0.3"):
+                #print("delsobj's rId:",delsobj["id"],delsobj["info"])
+                #print("delsobj's rId:",delsobj["id"],delsobj["info"])
+                cv2.putText(imgdels,_delsid+"_"+_delsinfo[7:],(y-3,x+5),cv2.FONT_ITALIC,0.6,cl,thickness)
+                cv2.line(imgdels, (y - 9, x - 9), (y + 9, x + 9), cl, thickness)
+                cv2.line(imgdels, (y + 9, x - 9), (y - 9, x + 9), cl, thickness)
+                cv2.waitKey(300)
+            if -1!= _delsinfo.find("dynamicgreatexpi"):
+                #print("delsobj's rId:",delsobj["id"],delsobj["info"])
+                #print("delsobj's rId:",delsobj["id"],delsobj["info"])
+                cv2.putText(imgdels,_delsid+"_"+_delsinfo[7:],(y-3,x+5),cv2.FONT_ITALIC,0.6,cl,thickness)
+                cv2.line(imgdels, (y - 9, x - 9), (y + 9, x + 9), cl, thickness)
+                cv2.line(imgdels, (y + 9, x - 9), (y - 9, x + 9), cl, thickness)
+                cv2.waitKey(300)
+            if -1!= _delsinfo.find("dynamicupdategreat0.2"):
+                #print("delsobj's rId:",delsobj["id"],delsobj["info"])  
+                #print("delsobj's rId:",delsobj["id"],delsobj["info"])
+                cv2.putText(imgdels,_delsid+"_"+_delsinfo[7:],(y-3,x+5),cv2.FONT_ITALIC,0.6,cl,thickness)
+                cv2.line(imgdels, (y - 9, x - 9), (y + 9, x + 9), cl, thickness)
+                cv2.line(imgdels, (y + 9, x - 9), (y - 9, x + 9), cl, thickness)
+                cv2.waitKey(300)
+            if -1!= _delsinfo.find("EoF"):
+                #print("delsobj's rId:",delsobj["id"],delsobj["info"])  
+                #print("delsobj's rId:",delsobj["id"],delsobj["info"])
+                cv2.putText(imgdels,_delsid+"_"+_delsinfo[7:],(y-3,x+5),cv2.FONT_ITALIC,0.6,cl,thickness)
+                cv2.line(imgdels, (y - 9, x - 9), (y + 9, x + 9), cl, thickness)
+                cv2.line(imgdels, (y + 9, x - 9), (y - 9, x + 9), cl, thickness)
+                cv2.waitKey(300)
            
 
 if __name__ == "__main__":
     print("begin to tuning non-motor display!!<<<")
     radar_no = str(sys.argv[1])
-    main(radar_no)
+    try:
+
+        suffix = str(sys.argv[2])
+    except:
+        print("default em show!")
+        suffix = ""
+    main(radar_no,suffix)
     
     
 

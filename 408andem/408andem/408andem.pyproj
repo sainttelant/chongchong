@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>a30f9a48-ab09-489b-a2f4-282f60b71957</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>record_408ecal.py</StartupFile>
+    <StartupFile>xwEMshow.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -13,7 +13,7 @@
     <RootNamespace>408andem</RootNamespace>
     <InterpreterId>CondaEnv|CondaEnv|Anaconda3</InterpreterId>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>215 True</CommandLineArguments>
+    <CommandLineArguments>215 _XW</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
